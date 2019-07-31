@@ -1,0 +1,61 @@
+---
+# -- BIOS設定 --
+# GRUB_CMDLINE_LINUXにオプションが定義されているか確認する。
+- name: Ensure grub already configured.
+  shell: "fgrep GRUB_CMDLINE_LINUX /etc/default/grub | fgrep '{{ item }}'"
+  register: grub_config
+  changed_when: false
+  failed_when: grub_config.rc not in [0,1]
+  loop: "{{ fujitsu_initial_grub }}"
+
+# オプションが定義されていなければ、末尾にオプションを追加する。
+- name: Configure grub.
+  lineinfile:
+    dest: /etc/default/grub
+    regexp: 'GRUB_CMDLINE_LINUX="(.*)"'
+    line: 'GRUB_CMDLINE_LINUX="\1 {{ item.item }}"'
+    backrefs: yes
+  when: grub_config.results is defined and item.rc != 0
+  loop: "{{ grub_config.results }}"
+  register: grub_state
+
+# BIOSかUEFIか確認
+- name: Check system firmware bios or uefi.
+  stat: 
+    path: /sys/firmware/efi
+  register: uefi
+
+# UEFIではなく、かつ設定変更があればBIOSのmkconfig実行。
+- name: Update grub on bios.
+  shell: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: not uefi.exists and grub_state is defined and grub_state.changed
+
+# UEFIで、かつ設定変更が有ればUEFIのmkconfig実行。
+- name: Update grub on efi.
+  shell: grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg
+  when: uefi.exists and grub_state is defined and grub_state.changed
+
+# -- コアダンプ設定 --
+- name: Configure Systemd for coredump enable.
+  lineinfile:
+    dest: "{{ item.file }}" 
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: "present"
+  loop:
+    - file: "/etc/systemd/system.conf"
+      regexp: "^DefaultLimitCore\\s*="
+      line: "DefaultLimitCore=infinity"
+    - file: "/etc/sysconfig/init"
+      regexp: "^DAEMON_COREFILE_LIMIT\\s*="
+      line: "DAEMON_COREFILE_LIMIT=unlimited"
+
+- name: Configure kernel for coredump enable.
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+  loop: "{{ fujitsu_initial_kernel }}"
+
+
+
+

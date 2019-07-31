@@ -1,0 +1,8 @@
+---
+# FJ-LSP and kernel-debuginfo version.
+FUJITSU_FJLSP_VERSION: UP1-1.0-0
+FUJITSU_FJLSP_DEBUGINFO_VERSION: 3.10.0-229
+
+# FJ-LSP package repository.
+# RHEL標準パッケージが含まれるリポジトリを指定してください。
+FUJITSU_FJLSP_REPO: file:///media/cdrom/

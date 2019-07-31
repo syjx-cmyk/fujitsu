@@ -1,0 +1,33 @@
+---
+- name: Install kernel-debuginfo.
+  yum:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - "kernel-debuginfo-{{ FUJITSU_FJLSP_DEBUGINFO_VERSION }}.el7"
+    - "kernel-debuginfo-common-x86_64-{{ FUJITSU_FJLSP_DEBUGINFO_VERSION }}.el7"
+
+# FJ-LSPのパッケージが存在するか確認する。
+# 結果が3件より少なければ、以後インストールが実行される。
+- name: Ensure installed FJ-LSP packages.
+  shell: rpm -qa | egrep '^(FJSVsnap|FJSVgetperfinfo|FJSVdumptools)'
+  register: fj_lsp_packages
+  check_mode: no
+  changed_when: false
+  failed_when: fj_lsp_packages.rc not in [0,1]
+
+- name: Copy FJ-LSP installer.
+  copy:
+    src: "FJLSP7{{ FUJITSU_FJLSP_VERSION }}.iso"
+    dest: "/tmp/fjlsp.iso"
+  changed_when: false
+  when: fj_lsp_packages.stdout_lines|length != 3
+
+- name: Mount installer iso file.
+  shell: "mount -o loop -t iso9660 /tmp/fjlsp.iso /media"
+  changed_when: false
+  when: fj_lsp_packages.stdout_lines|length != 3
+
+- name: Install FJ-LSP.
+  shell: "/media/fj_lsp_start.sh --auto --repo {{ FUJITSU_FJLSP_REPO }}"
+  when: fj_lsp_packages.stdout_lines|length != 3

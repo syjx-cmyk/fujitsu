@@ -1,0 +1,9 @@
+---
+- name: Check kdump environment.
+  shell: "/opt/FJSVdumptools/bin/dump-env-chk | head -1"
+  changed_when: false
+  register: kdump_status
+
+- name: Run Fujitsu dumptools dump_env_set.
+  shell: "/opt/FJSVdumptools/bin/dump-env-set -s {{ FUJITSU_KDUMP_DISK }}"
+  when: kdump_status.stdout.find('NG') != -1

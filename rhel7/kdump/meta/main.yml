@@ -1,0 +1,3 @@
+---
+dependencies:
+  - role: fujitsu/rhel7/fj_lsp

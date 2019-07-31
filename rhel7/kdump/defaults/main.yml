@@ -1,0 +1,3 @@
+---
+# kdump取得先領域を設定します。
+FUJITSU_KDUMP_DISK: /var/crash

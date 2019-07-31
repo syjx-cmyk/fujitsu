@@ -1,0 +1,11 @@
+---
+fujitsu_initial_grub:
+  - "thash_entries=131072"
+  - "consoleblank=0"
+
+fujitsu_initial_kernel:
+  - name: kernel.core_pattern
+    value: /var/tmp/core-%e.%p
+  - name: fs.suid_dumpable
+    value: 2
+
